@@ -1,14 +1,4 @@
 'use strict';
-var VERSION = {
-	major: 0,
-	minor: 5,
-	bugfix: 1,
-	state: 'a',
-	name: '',
-	toString: function() {
-		return '%s.%s.%s%s \'%s\''.format(this.major, this.minor, this.bugfix, this.state, this.name)
-	}
-};
 document.title = 'jsrl v' + VERSION;
 
 const WIDTH = 100, HEIGHT = 60, SIDEWIDTH = 42, TRAPNUM = 25, POTIONNUM = 40, MONSTERNUM = 25, WEAPONNUMN = 50;
