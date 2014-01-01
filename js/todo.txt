@@ -1,0 +1,7 @@
+TODO:
+Weapons
+Scrolls
+Stats
+
+BUGS:
+no Combat
