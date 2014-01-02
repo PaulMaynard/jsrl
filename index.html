@@ -10,5 +10,9 @@
 		<script src="js/lib/lodash.min.js"></script>
 		<script src="js/version.js"></script>
 		<script src="js/game.js"></script>
+		<div style="float: right">
+			<button onclick="Game.redraw();">Redraw</button><br>
+			<input id="screen" placeholder="screen"><button onclick="Game.switchScreen(document.getElementById('screen').value)">Switch</button>
+		</div>
 	</body>
 </html>
