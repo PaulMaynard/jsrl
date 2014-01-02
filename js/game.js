@@ -18,6 +18,22 @@ function Tile(char, color, bg) {
 ROT.Display.prototype.drawTile = function(x, y, tile) {
 	this.draw(x, y, tile.char, tile.color, tile.bg);
 };
+ROT.Display.prototype.drawEntity = function(e) {
+	this.drawTile(e.x, e.y, e.tile);
+};
+
+function Entity(name, tile, x, y) {
+	this.name = name;
+	this.tile = tile;
+	this.x = x;
+	this.y = y;
+}
+_.assign(Entity.prototype, {
+	move: function(x, y) {
+		this.x += x;
+		this.y += y;
+	}
+});
 
 var Game = {
 	width: 80,
@@ -41,29 +57,84 @@ var Game = {
 	}
 };
 Game.display = new ROT.Display({width: Game.width, height: Game.height});
+document.body.addEventListener("keydown", function(e) {
+	Game.screens.current.handleKey(e.keyCode);
+});
 
 Game.screens.start = new Screen({
 	render: function() {
-		this.display.drawText(5, 5, '%c{red}Hello World!');
+		this.display.drawText(5, 5, 'Welcome to jsrl2 ' + VERSION);
+		this.display.drawText(5, 6, 'Press [Enter] to play or [Space] to lose');
+	},
+	handleKey: function(key) {
+		switch (key) {
+			case ROT.VK_RETURN:
+				Game.switchScreen('main');
+				break;
+			case ROT.VK_SPACE:
+				Game.switchScreen('test');
+		}
 	}
 });
-var player = new Tile('@', 'red', 'green');
-Game.screens.main = new Screen(function(){
-	var x = Math.floor(ROT.RNG.getUniform() * Game.width),
-		y = Math.floor(ROT.RNG.getUniform() * Game.height);
-	this.display.drawTile(x, y, player);
+var player;
+Game.screens.main = new Screen({
+	enter: function() {
+		var x = Math.floor(ROT.RNG.getUniform() * Game.width),
+			y = Math.floor(ROT.RNG.getUniform() * Game.height);
+		player = new Entity('you', new Tile('@'), x, y);
+	},
+	render: function() {
+		this.display.drawEntity(player);
+	},
+	handleKey: function(key) {
+		switch (key) {
+			case ROT.VK_ESCAPE:
+				Game.switchScreen('start');
+				break;
+			case ROT.VK_SPACE:
+				Game.switchScreen('test');
+				break;
+			case ROT.VK_LEFT:
+				player.move(-1, 0)
+				Game.redraw();
+				break;
+			case ROT.VK_RIGHT:
+				player.move(1, 0)
+				Game.redraw();
+				break;
+			case ROT.VK_UP:
+				player.move(0, -1)
+				Game.redraw();
+				break;
+			case ROT.VK_DOWN:
+				player.move(0, 1)
+				Game.redraw();
+				break;
+		}
+	}
 });
-Game.screens.hello = new Screen(function(){
-	var foreground, background, colors;
-	for (var i = 0; i < 15; i++) {
-	    // Calculate the foreground color, getting progressively darker
-	    // and the background color, getting progressively lighter.
-	    foreground = ROT.Color.randomize([128, 128, 128], [64, 64, 64]);
-	    background = ROT.Color.interpolate([255, 255, 255], [0, 0, 0], i / 15);
-	    // Create the color format specifier.
-	    colors = "%c{" + ROT.Color.toRGB(foreground) + "}%b{" + ROT.Color.toRGB(background) + "}";
-	    // Draw the text at col 2 and row i
-	    this.display.drawText(2, i, colors + "Hello, world!");
+Game.screens.test = new Screen({
+	render: function(){
+		var foreground, background, colors;
+		for (var i = 0; i < 15; i++) {
+			// Calculate the foreground color, getting progressively darker
+			// and the background color, getting progressively lighter.
+			foreground = ROT.Color.randomize([128, 128, 128], [64, 64, 64]);
+			background = ROT.Color.interpolate([255, 255, 255], [0, 0, 0], i / 15);
+			// Create the color format specifier.
+			colors = "%c{" + ROT.Color.toRGB(foreground) + "}%b{" + ROT.Color.toRGB(background) + "}";
+			// Draw the text at col 2 and row i
+			this.display.drawText(2, i, colors + "Hello, world!");
+		}
+	},
+	handleKey: function(key) {
+		switch (key) {
+			case ROT.VK_ESCAPE:
+				Game.switchScreen('start');
+				break;
+			case ROT.VK_SPACE:
+				Game.switchScreen('main');
+		}
 	}
 });
 
