@@ -10,6 +10,15 @@ function Screen(options, display) {
 	}
 }
 
+function Tile(char, color, bg) {
+	this.char = char;
+	this.color = color;
+	this.bg = bg;
+}
+ROT.Display.prototype.drawTile = function(x, y, tile) {
+	this.draw(x, y, tile.char, tile.color, tile.bg);
+};
+
 var Game = {
 	width: 80,
 	height: 25,
@@ -38,19 +47,19 @@ Game.screens.start = new Screen({
 		this.display.drawText(5, 5, '%c{red}Hello World!');
 	}
 });
+var player = new Tile('@', 'red', 'green');
 Game.screens.main = new Screen(function(){
 	var x = Math.floor(ROT.RNG.getUniform() * Game.width),
 		y = Math.floor(ROT.RNG.getUniform() * Game.height);
-	console.log(x, y);
-	this.display.draw(x, y, '@');
+	this.display.drawTile(x, y, player);
 });
 Game.screens.hello = new Screen(function(){
 	var foreground, background, colors;
-	for (var i = 0; i < 10; i++) {
+	for (var i = 0; i < 15; i++) {
 	    // Calculate the foreground color, getting progressively darker
 	    // and the background color, getting progressively lighter.
-	    foreground = ROT.Color.interpolate([0, 255, 0], [255, 0, 0], i / 10);
-	    background = ROT.Color.interpolate([255, 255, 255], [0, 0, 0], i / 10);
+	    foreground = ROT.Color.randomize([128, 128, 128], [64, 64, 64]);
+	    background = ROT.Color.interpolate([255, 255, 255], [0, 0, 0], i / 15);
 	    // Create the color format specifier.
 	    colors = "%c{" + ROT.Color.toRGB(foreground) + "}%b{" + ROT.Color.toRGB(background) + "}";
 	    // Draw the text at col 2 and row i
