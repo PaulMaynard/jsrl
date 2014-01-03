@@ -127,7 +127,7 @@ Game.screens.main = new Screen({
 				break;
 			case ROT.VK_1:
 			case ROT.VK_END:
-				player.move(1, -1);
+				player.move(-1, 1);
 				Game.redraw();
 				break;
 			case ROT.VK_3:
