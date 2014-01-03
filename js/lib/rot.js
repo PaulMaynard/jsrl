@@ -1,6 +1,6 @@
 /*
 	This is rot.js, the ROguelike Toolkit in JavaScript.
-	Version 0.5~dev, generated on Thu Jul  4 10:46:30 CEST 2013.
+	Version 0.5~dev, generated on Wed Dec 18 21:12:34 CET 2013.
 */
 
 /**
@@ -678,6 +678,21 @@ Function.prototype.extend = function(parent) {
 	this.prototype.constructor = this;
 	return this;
 }
+window.requestAnimationFrame =
+	window.requestAnimationFrame
+	|| window.mozRequestAnimationFrame
+	|| window.webkitRequestAnimationFrame
+	|| window.oRequestAnimationFrame
+	|| window.msRequestAnimationFrame
+	|| function(cb) { return setTimeout(cb, 1000/60); };
+
+window.cancelAnimationFrame =
+	window.cancelAnimationFrame
+	|| window.mozCancelAnimationFrame
+	|| window.webkitCancelAnimationFrame
+	|| window.oCancelAnimationFrame
+	|| window.msCancelAnimationFrame
+	|| function(id) { return clearTimeout(id); };
 /**
  * @class Visual map display
  * @param {object} [options]
@@ -688,10 +703,13 @@ Function.prototype.extend = function(parent) {
  * @param {string} [options.fontStyle=""] bold/italic/none/both
  * @param {string} [options.fg="#ccc"]
  * @param {string} [options.bg="#000"]
- * @param {int} [options.fps=25]
  * @param {float} [options.spacing=1]
  * @param {float} [options.border=0]
  * @param {string} [options.layout="rect"]
+ * @param {int} [options.tileWidth=32]
+ * @param {int} [options.tileHeight=32]
+ * @param {object} [options.tileMap={}]
+ * @param {image} [options.tileSet=null]
  */
 ROT.Display = function(options) {
 	var canvas = document.createElement("canvas");
@@ -706,19 +724,23 @@ ROT.Display = function(options) {
 		height: ROT.DEFAULT_HEIGHT,
 		layout: "rect",
 		fontSize: 15,
-		fps: 25,
 		spacing: 1,
 		border: 0,
 		fontFamily: "monospace",
 		fontStyle: "",
 		fg: "#ccc",
-		bg: "#000"
+		bg: "#000",
+		tileWidth: 32,
+		tileHeight: 32,
+		tileMap: {},
+		tileSet: null
 	};
 	for (var p in options) { defaultOptions[p] = options[p]; }
 	this.setOptions(defaultOptions);
 	this.DEBUG = this.DEBUG.bind(this);
-	
-	this._interval = setInterval(this._tick.bind(this), 1000/this._options.fps);
+
+	this._tick = this._tick.bind(this);
+	requestAnimationFrame(this._tick);
 }
 
 /**
@@ -810,15 +832,10 @@ ROT.Display.prototype.eventToPosition = function(e) {
 		var x = e.clientX;
 		var y = e.clientY;
 	}
-	x += (document.documentElement.scrollLeft);
-	y += (document.documentElement.scrollTop);
-	
-	var node = this._context.canvas;
-	while (node) {
-		x -= node.offsetLeft;
-		y -= node.offsetTop;
-		node = node.offsetParent;
-	}
+
+	var rect = this._context.canvas.getBoundingClientRect();
+	x -= rect.left;
+	y -= rect.top;
 	
 	if (x < 0 || y < 0 || x >= this._context.canvas.width || y >= this._context.canvas.height) { return [-1, -1]; }
 
@@ -828,7 +845,7 @@ ROT.Display.prototype.eventToPosition = function(e) {
 /**
  * @param {int} x
  * @param {int} y
- * @param {string} ch 
+ * @param {string || string[]} ch One or more chars (will be overlapping themselves)
  * @param {string} [fg] foreground color
  * @param {string} [bg] background color
  */
@@ -892,6 +909,8 @@ ROT.Display.prototype.drawText = function(x, y, text, maxWidth) {
  * Timer tick: update dirty parts
  */
 ROT.Display.prototype._tick = function() {
+	requestAnimationFrame(this._tick);
+
 	if (!this._dirty) { return; }
 
 	if (this._dirty === true) { /* draw all */
@@ -1002,7 +1021,11 @@ ROT.Display.Rect.prototype._drawWithCache = function(data, clearBefore) {
 			ctx.font = this._context.font;
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
-			ctx.fillText(ch, this._spacingX/2, this._spacingY/2);
+
+			var chars = [].concat(ch);
+			for (var i=0;i<chars.length;i++) {
+				ctx.fillText(chars[i], this._spacingX/2, this._spacingY/2);
+			}
 		}
 		this._canvasCache[hash] = canvas;
 	}
@@ -1026,7 +1049,11 @@ ROT.Display.Rect.prototype._drawNoCache = function(data, clearBefore) {
 	if (!ch) { return; }
 
 	this._context.fillStyle = fg;
-	this._context.fillText(ch, (x+0.5) * this._spacingX, (y+0.5) * this._spacingY);
+
+	var chars = [].concat(ch);
+	for (var i=0;i<chars.length;i++) {
+		this._context.fillText(chars[i], (x+0.5) * this._spacingX, (y+0.5) * this._spacingY);
+	}
 }
 
 ROT.Display.Rect.prototype.computeSize = function(availWidth, availHeight) {
@@ -1099,7 +1126,11 @@ ROT.Display.Hex.prototype.draw = function(data, clearBefore) {
 	if (!ch) { return; }
 
 	this._context.fillStyle = fg;
-	this._context.fillText(ch, cx, cy);
+
+	var chars = [].concat(ch);
+	for (var i=0;i<chars.length;i++) {
+		this._context.fillText(chars[i], cx, cy);
+	}
 }
 
 
@@ -1156,6 +1187,65 @@ ROT.Display.Hex.prototype._fill = function(cx, cy) {
 	this._context.lineTo(cx - this._spacingX + b, cy-a/2+b);
 	this._context.lineTo(cx, cy-a+b);
 	this._context.fill();
+}
+/**
+ * @class Tile backend
+ * @private
+ */
+ROT.Display.Tile = function(context) {
+	ROT.Display.Rect.call(this, context);
+	
+	this._options = {};
+}
+ROT.Display.Tile.extend(ROT.Display.Rect);
+
+ROT.Display.Tile.prototype.compute = function(options) {
+	this._options = options;
+	this._context.canvas.width = options.width * options.tileWidth;
+	this._context.canvas.height = options.height * options.tileHeight;
+}
+
+ROT.Display.Tile.prototype.draw = function(data, clearBefore) {
+	var x = data[0];
+	var y = data[1];
+	var ch = data[2];
+	var fg = data[3];
+	var bg = data[4];
+
+	var tileWidth = this._options.tileWidth;
+	var tileHeight = this._options.tileHeight;
+
+	if (clearBefore) {
+		var b = this._options.border;
+		this._context.fillStyle = bg;
+		this._context.fillRect(x*tileWidth, y*tileHeight, tileWidth, tileHeight);
+	}
+
+	if (!ch) { return; }
+
+	var chars = [].concat(ch);
+	for (var i=0;i<chars.length;i++) {
+		var tile = this._options.tileMap[chars[i]];
+		if (!tile) { throw new Error("Char '" + chars[i] + "' not found in tileMap"); }
+		
+		this._context.drawImage(
+			this._options.tileSet,
+			tile[0], tile[1], tileWidth, tileHeight,
+			x*tileWidth, y*tileHeight, tileWidth, tileHeight
+		);
+	}
+}
+
+ROT.Display.Tile.prototype.computeSize = function(availWidth, availHeight) {
+	var width = Math.floor(availWidth / this._options.tileWidth);
+	var height = Math.floor(availHeight / this._options.tileHeight);
+	return [width, height];
+}
+
+ROT.Display.Tile.prototype.computeFontSize = function(availWidth, availHeight) {
+	var width = Math.floor(availWidth / this._options.width);
+	var height = Math.floor(availHeight / this._options.height);
+	return [width, height];
 }
 /**
  * @namespace
@@ -4559,6 +4649,18 @@ ROT.Path = function(toX, toY, passableCallback, options) {
 	for (var p in options) { this._options[p] = options[p]; }
 
 	this._dirs = ROT.DIRS[this._options.topology];
+	if (this._options.topology == 8) { /* reorder dirs for more aesthetic result (vertical/horizontal first) */
+		this._dirs = [
+			this._dirs[0],
+			this._dirs[2],
+			this._dirs[4],
+			this._dirs[6],
+			this._dirs[1],
+			this._dirs[3],
+			this._dirs[5],
+			this._dirs[7]
+		]
+	}
 }
 
 /**
