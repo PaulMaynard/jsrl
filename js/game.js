@@ -35,6 +35,12 @@ _.assign(Entity.prototype, {
 	}
 });
 
+function Map(tiles) {
+	this.tiles = tiles;
+	this.width = tiles.length;
+	this.height = tiles[0].length;
+}
+
 var Game = {
 	width: 80,
 	height: 25,
@@ -149,7 +155,7 @@ Game.screens.test = new Screen({
 			// Create the color format specifier.
 			colors = "%c{" + ROT.Color.toRGB(foreground) + "}%b{" + ROT.Color.toRGB(background) + "}";
 			// Draw the text at col 2 and row i
-			this.display.drawText(2, i, colors + "Hello, world!");
+			this.display.drawText(2, i, colors + "You lose!");
 		}
 	},
 	handleKey: function(key) {
