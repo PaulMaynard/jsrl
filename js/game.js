@@ -94,20 +94,45 @@ Game.screens.main = new Screen({
 			case ROT.VK_SPACE:
 				Game.switchScreen('test');
 				break;
+			// Movement
 			case ROT.VK_LEFT:
+			case ROT.VK_4:
 				player.move(-1, 0)
 				Game.redraw();
 				break;
 			case ROT.VK_RIGHT:
+			case ROT.VK_6:
 				player.move(1, 0)
 				Game.redraw();
 				break;
 			case ROT.VK_UP:
+			case ROT.VK_8:
 				player.move(0, -1)
 				Game.redraw();
 				break;
 			case ROT.VK_DOWN:
+			case ROT.VK_2:
 				player.move(0, 1)
+				Game.redraw();
+				break;
+			case ROT.VK_7:
+			case ROT.VK_HOME:
+				player.move(-1, -1);
+				Game.redraw();
+				break;
+			case ROT.VK_9:
+			case ROT.VK_PAGE_UP:
+				player.move(1, -1);
+				Game.redraw();
+				break;
+			case ROT.VK_1:
+			case ROT.VK_END:
+				player.move(1, -1);
+				Game.redraw();
+				break;
+			case ROT.VK_3:
+			case ROT.VK_PAGE_DOWN:
+				player.move(1, 1);
 				Game.redraw();
 				break;
 		}
