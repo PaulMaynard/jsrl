@@ -1,0 +1,12 @@
+{
+  "browser": true,
+  "devel": true,
+  "esnext": true,
+  "globals": {"ROT": true, "_": true, "VERSION": true},
+  "globalstrict": true,
+  "quotmark": true,
+  "smarttabs": true,
+  "trailing": true,
+  "undef": true,
+  "unused": true
+}
