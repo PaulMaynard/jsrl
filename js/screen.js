@@ -43,7 +43,8 @@ Game.screens.main = new Screen({
 	init: function() {
 		this.map = new Map(new ROT.Map.Digger(Game.width, Game.height));
 		var p = this.map.randomPos();
-		player = new Entity('you', Game.tiles.player, p.x, p.y);
+		player.map = this.map
+		player.setPos(p);
 	},
 	render: function() {
 		for (var i = 0; i < this.map.tiles.length; i++) {
@@ -64,45 +65,43 @@ Game.screens.main = new Screen({
 			// Movement
 			case ROT.VK_NUMPAD4:
 			case ROT.VK_LEFT:
-				player.move(-1, 0, this.map);
-				Game.redraw();
+				player.move(-1, 0);
 				break;
 			case ROT.VK_NUMPAD6:
 			case ROT.VK_RIGHT:
-				player.move(1, 0, this.map);
-				Game.redraw();
+				player.move(1, 0);
 				break;
 			case ROT.VK_NUMPAD8:
 			case ROT.VK_UP:
-				player.move(0, -1, this.map);
-				Game.redraw();
+				player.move(0, -1);
 				break;
 			case ROT.VK_NUMPAD2:
 			case ROT.VK_DOWN:
-				player.move(0, 1, this.map);
-				Game.redraw();
+				player.move(0, 1);
 				break;
 			case ROT.VK_NUMPAD7:
 			case ROT.VK_HOME:
-				player.move(-1, -1, this.map);
-				Game.redraw();
+				player.move(-1, -1);
 				break;
 			case ROT.VK_NUMPAD9:
 			case ROT.VK_PAGE_UP:
-				player.move(1, -1, this.map);
-				Game.redraw();
+				player.move(1, -1);
 				break;
 			case ROT.VK_NUMPAD1:
 			case ROT.VK_END:
-				player.move(-1, 1, this.map);
-				Game.redraw();
+				player.move(-1, 1);
 				break;
 			case ROT.VK_NUMPAD3:
 			case ROT.VK_PAGE_DOWN:
-				player.move(1, 1, this.map);
-				Game.redraw();
+				player.move(1, 1);
 				break;
+			case ROT.VK_C:
+				player.closeDoors();
+				break;
+			default:
+				return;
 		}
+		Game.redraw();
 	}
 });
 Game.screens.test = new Screen({

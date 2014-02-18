@@ -17,7 +17,4 @@ document.body.addEventListener('keydown', function(e) {
 	Game.screens.current.handleKey(e.keyCode);
 });
 
-var player;
-
-
 document.body.appendChild(Game.display.getContainer());

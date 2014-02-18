@@ -32,6 +32,22 @@ _.assign(Map.prototype, {
 			this.tiles[x][y] = val;
 		}
 	},
+	getRect: function(x, y, w, h) {
+		return _.map(_.filter(this.tiles, function(t, i) {
+			return i >= x && i < x + w;
+		}), function(a) {
+			return _.filter(a, function(t, i) {
+				return i >= x && i < x + w;
+			});
+		});
+	},
+	setRect: function(x, y, t) {
+		_.each(t, function(r, i) {
+			_.each(r, function(t, j) {
+				this.setTile(x + i, y + j, t);
+			});
+		})
+	},
 	canMove: function(o, x, y) {
 		x = x || 0;
 		y = y || 0;
