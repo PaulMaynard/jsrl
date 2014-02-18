@@ -1,8 +1,7 @@
 /*
 	This is rot.js, the ROguelike Toolkit in JavaScript.
-	Version 0.5~dev, generated on Wed Dec 18 21:12:34 CET 2013.
+	Version 0.5~dev, generated on Wed Feb 12 09:49:59 CET 2014. 
 */
-
 /**
  * @namespace Top-level ROT namespace
  */
@@ -1798,19 +1797,25 @@ ROT.Engine.prototype.start = function() {
  */
 ROT.Engine.prototype.lock = function() {
 	this._lock++;
+	return this;
 }
 
 /**
  * Resume execution (paused by a previous lock)
  */
 ROT.Engine.prototype.unlock = function() {
+	console.log("unlock");
 	if (!this._lock) { throw new Error("Cannot unlock unlocked engine"); }
 	this._lock--;
 
 	while (!this._lock) {
 		var actor = this._scheduler.next();
 		if (!actor) { return this.lock(); } /* no actors */
-		actor.act();
+		var result = actor.act();
+		if (result && result.then) { /* actor returned a "thenable", looks like a Promise */
+			this.lock();
+			result.then(this.unlock.bind(this));
+		}
 	}
 
 	return this;
@@ -2176,7 +2181,7 @@ ROT.Map.Cellular = function(width, height, options) {
 		survive: [4, 5, 6, 7, 8],
 		topology: 8
 	};
-	for (var p in options) { this._options[p] = options[p]; }
+	this.setOptions(options);
 	
 	this._dirs = ROT.DIRS[this._options.topology];
 	this._map = this._fillMap(0);
@@ -2194,6 +2199,14 @@ ROT.Map.Cellular.prototype.randomize = function(probability) {
 		}
 	}
 	return this;
+}
+
+/**
+ * Change options.
+ * @see ROT.Map.Cellular
+ */
+ROT.Map.Cellular.prototype.setOptions = function(options) {
+	for (var p in options) { this._options[p] = options[p]; }
 }
 
 ROT.Map.Cellular.prototype.set = function(x, y, value) {
