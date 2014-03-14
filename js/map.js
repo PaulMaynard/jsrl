@@ -44,7 +44,7 @@ _.assign(Map.prototype, {
 	setRect: function(x, y, t) {
 		_.each(t, function(r, i) {
 			_.each(r, function(t, j) {
-				this.setTile(x + i, y + j, t);
+				this.tiles[x + i][y + j] = t;
 			});
 		})
 	},
