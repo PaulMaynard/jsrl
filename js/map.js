@@ -45,8 +45,8 @@ _.assign(Map.prototype, {
 		_.each(t, function(r, i) {
 			_.each(r, function(t, j) {
 				this.tiles[x + i][y + j] = t;
-			});
-		})
+			}, this);
+		}, this)
 	},
 	canMove: function(o, x, y) {
 		x = x || 0;
