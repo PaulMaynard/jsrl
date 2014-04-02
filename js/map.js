@@ -56,8 +56,8 @@ _.assign(Map.prototype, {
 	randomPos: function() {
 		var p = {x: 0, y: 0}, x, y;
 		while (!this.canMove(p)) {
-			x = Math.floor(ROT.RNG.getUniform() * this.width);
-			y = Math.floor(ROT.RNG.getUniform() * this.height);
+			x = Math.floor(ROT.RNG.getUniformInt(0, this.width));
+			y = Math.floor(ROT.RNG.getUniformInt(0, this.height));
 			p = {x: x, y: y};
 		}
 		return p;
