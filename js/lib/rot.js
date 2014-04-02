@@ -1,6 +1,6 @@
 /*
 	This is rot.js, the ROguelike Toolkit in JavaScript.
-	Version 0.5~dev, generated on Wed Feb 12 09:49:59 CET 2014. 
+	Version 0.5~dev, generated on Mon Mar 31 15:10:41 CEST 2014.
 */
 /**
  * @namespace Top-level ROT namespace
@@ -328,7 +328,7 @@ var ROT = {
 	VK_KANA: 21, 
 	/** Linux support for this keycode was added in Gecko 4.0. */
 	VK_HANGUL: 21, 
-	/** 英数 key on Japanese Mac keyboard. Requires Gecko 15.0 */
+	/** è‹±æ•° key on Japanese Mac keyboard. Requires Gecko 15.0 */
 	VK_EISU: 22, 
 	/** Linux support for this keycode was added in Gecko 4.0. */
 	VK_JUNJA: 23, 
@@ -1248,7 +1248,7 @@ ROT.Display.Tile.prototype.computeFontSize = function(availWidth, availHeight) {
 }
 /**
  * @namespace
- * This code is an implementation of Alea algorithm; (C) 2010 Johannes Baagøe.
+ * This code is an implementation of Alea algorithm; (C) 2010 Johannes BaagÃ¸e.
  * Alea is licensed according to the http://en.wikipedia.org/wiki/MIT_License.
  */
 ROT.RNG = {
@@ -1288,6 +1288,17 @@ ROT.RNG = {
 		this._c = t | 0;
 		this._s2 = t - this._c;
 		return this._s2;
+	},
+
+	/**
+	 * @param {int} lowerBound The lower end of the range to return a value from, inclusive
+	 * @param {int} upperBound The upper end of the range to return a value from, inclusive
+	 * @returns {int} Pseudorandom value [lowerBound, upperBound], using ROT.RNG.getUniform() to distribute the value
+	 */
+	getUniformInt: function(lowerBound, upperBound) {
+		var max = Math.max(lowerBound, upperBound);
+		var min = Math.min(lowerBound, upperBound);
+		return Math.floor(this.getUniform() * (max - min + 1)) + min;
 	},
 
 	/**
@@ -1804,7 +1815,6 @@ ROT.Engine.prototype.lock = function() {
  * Resume execution (paused by a previous lock)
  */
 ROT.Engine.prototype.unlock = function() {
-	console.log("unlock");
 	if (!this._lock) { throw new Error("Cannot unlock unlocked engine"); }
 	this._lock--;
 
@@ -2563,6 +2573,7 @@ ROT.Map.Uniform.prototype.create = function(callback) {
 		this._rooms = [];
 		this._unconnected = [];
 		this._generateRooms();
+		if (this._rooms.length < 2) { continue; }
 		if (this._generateCorridors()) { break; }
 	}
 	
@@ -3762,7 +3773,7 @@ ROT.FOV = function(lightPassesCallback, options) {
 };
 
 /**
- * Compute visibility
+ * Compute visibility for a 360-degree circle
  * @param {int} x
  * @param {int} y
  * @param {int} R Maximum visibility radius
@@ -3822,7 +3833,7 @@ ROT.FOV.prototype._getCircle = function(cx, cy, r) {
 	return result;
 }
 /**
- * @class Discrete shadowcasting algorithm
+ * @class Discrete shadowcasting algorithm. Obsoleted by Precise shadowcasting.
  * @augments ROT.FOV
  */
 ROT.FOV.DiscreteShadowcasting = function(lightPassesCallback, options) {
@@ -4053,6 +4064,160 @@ ROT.FOV.PreciseShadowcasting.prototype._checkVisibility = function(A1, A2, block
 	return visibleLength/arcLength;
 }
 /**
+ * @class Recursive shadowcasting algorithm
+ * Currently only supports 4/8 topologies, not hexagonal.
+ * Based on Peter Harkins' implementation of BjÃ¶rn BergstrÃ¶m's algorithm described here: http://www.roguebasin.com/index.php?title=FOV_using_recursive_shadowcasting
+ * @augments ROT.FOV
+ */
+ROT.FOV.RecursiveShadowcasting = function(lightPassesCallback, options) {
+	ROT.FOV.call(this, lightPassesCallback, options);
+}
+ROT.FOV.RecursiveShadowcasting.extend(ROT.FOV);
+
+/** Octants used for translating recursive shadowcasting offsets */
+ROT.FOV.RecursiveShadowcasting.OCTANTS = [
+	[-1,  0,  0,  1],
+	[ 0, -1,  1,  0],
+	[ 0, -1, -1,  0],
+	[-1,  0,  0, -1],
+	[ 1,  0,  0, -1],
+	[ 0,  1, -1,  0],
+	[ 0,  1,  1,  0],
+	[ 1,  0,  0,  1]
+];
+
+/**
+ * Compute visibility for a 360-degree circle
+ * @param {int} x
+ * @param {int} y
+ * @param {int} R Maximum visibility radius
+ * @param {function} callback
+ */
+ROT.FOV.RecursiveShadowcasting.prototype.compute = function(x, y, R, callback) {
+	//You can always see your own tile
+	callback(x, y, 0, true);
+	for(var i = 0; i < ROT.FOV.RecursiveShadowcasting.OCTANTS.length; i++) {
+		this._renderOctant(x, y, ROT.FOV.RecursiveShadowcasting.OCTANTS[i], R, callback);
+	}
+}
+
+/**
+ * Compute visibility for a 180-degree arc
+ * @param {int} x
+ * @param {int} y
+ * @param {int} R Maximum visibility radius
+ * @param {int} dir Direction to look in (expressed in a ROT.DIR value);
+ * @param {function} callback
+ */
+ROT.FOV.RecursiveShadowcasting.prototype.compute180 = function(x, y, R, dir, callback) {
+	//You can always see your own tile
+	callback(x, y, 0, true);
+	var previousOctant = (dir - 1 + 8) % 8; //Need to retrieve the previous octant to render a full 180 degrees
+	var nextPreviousOctant = (dir - 2 + 8) % 8; //Need to retrieve the previous two octants to render a full 180 degrees
+	var nextOctant = (dir+ 1 + 8) % 8; //Need to grab to next octant to render a full 180 degrees
+	this._renderOctant(x, y, ROT.FOV.RecursiveShadowcasting.OCTANTS[nextPreviousOctant], R, callback);
+	this._renderOctant(x, y, ROT.FOV.RecursiveShadowcasting.OCTANTS[previousOctant], R, callback);
+	this._renderOctant(x, y, ROT.FOV.RecursiveShadowcasting.OCTANTS[dir], R, callback);
+	this._renderOctant(x, y, ROT.FOV.RecursiveShadowcasting.OCTANTS[nextOctant], R, callback);
+}
+
+/**
+ * Compute visibility for a 90-degree arc
+ * @param {int} x
+ * @param {int} y
+ * @param {int} R Maximum visibility radius
+ * @param {int} dir Direction to look in (expressed in a ROT.DIR value);
+ * @param {function} callback
+ */
+ROT.FOV.RecursiveShadowcasting.prototype.compute90 = function(x, y, R, dir, callback) {
+	//You can always see your own tile
+	callback(x, y, 0, true);
+	var previousOctant = (dir - 1 + 8) % 8; //Need to retrieve the previous octant to render a full 90 degrees
+	this._renderOctant(x, y, ROT.FOV.RecursiveShadowcasting.OCTANTS[dir], R, callback);
+	this._renderOctant(x, y, ROT.FOV.RecursiveShadowcasting.OCTANTS[previousOctant], R, callback);
+}
+
+/**
+ * Render one octant (45-degree arc) of the viewshed
+ * @param {int} x
+ * @param {int} y
+ * @param {int} octant Octant to be rendered
+ * @param {int} R Maximum visibility radius
+ * @param {function} callback
+ */
+ROT.FOV.RecursiveShadowcasting.prototype._renderOctant = function(x, y, octant, R, callback) {
+	//Radius incremented by 1 to provide same coverage area as other shadowcasting radiuses
+	this._castVisibility(x, y, 1, 1.0, 0.0, R + 1, octant[0], octant[1], octant[2], octant[3], callback);
+}
+
+/**
+ * Actually calculates the visibility
+ * @param {int} startX The starting X coordinate
+ * @param {int} startY The starting Y coordinate
+ * @param {int} row The row to render
+ * @param {float} visSlopeStart The slope to start at
+ * @param {float} visSlopeEnd The slope to end at
+ * @param {int} radius The radius to reach out to
+ * @param {int} xx 
+ * @param {int} xy 
+ * @param {int} yx 
+ * @param {int} yy 
+ * @param {function} callback The callback to use when we hit a block that is visible
+ */
+ROT.FOV.RecursiveShadowcasting.prototype._castVisibility = function(startX, startY, row, visSlopeStart, visSlopeEnd, radius, xx, xy, yx, yy, callback) {
+	if(visSlopeStart < visSlopeEnd) { return; }
+	for(var i = row; i <= radius; i++) {
+		var dx = -i - 1;
+		var dy = -i;
+		var blocked = false;
+		var newStart = 0;
+
+		//'Row' could be column, names here assume octant 0 and would be flipped for half the octants
+		while(dx <= 0) {
+			dx += 1;
+
+			//Translate from relative coordinates to map coordinates
+			var mapX = startX + dx * xx + dy * xy;
+			var mapY = startY + dx * yx + dy * yy;
+
+			//Range of the row
+			var slopeStart = (dx - 0.5) / (dy + 0.5);
+			var slopeEnd = (dx + 0.5) / (dy - 0.5);
+		
+			//Ignore if not yet at left edge of Octant
+			if(slopeEnd > visSlopeStart) { continue; }
+			
+			//Done if past right edge
+			if(slopeStart < visSlopeEnd) { break; }
+				
+			//If it's in range, it's visible
+			if((dx * dx + dy * dy) < (radius * radius)) {
+				callback(mapX, mapY, i, true);
+			}
+	
+			if(!blocked) {
+				//If tile is a blocking tile, cast around it
+				if(!this._lightPasses(mapX, mapY) && i < radius) {
+					blocked = true;
+					this._castVisibility(startX, startY, i + 1, visSlopeStart, slopeStart, radius, xx, xy, yx, yy, callback);
+					newStart = slopeEnd;
+				}
+			} else {
+				//Keep narrowing if scanning across a block
+				if(!this._lightPasses(mapX, mapY)) {
+					newStart = slopeEnd;
+					continue;
+				}
+			
+				//Block has ended
+				blocked = false;
+				visSlopeStart = newStart;
+			}
+		}
+		if(blocked) { break; }
+	}
+}
+/**
  * @namespace Color operations
  */
 ROT.Color = {
@@ -4236,7 +4401,7 @@ ROT.Color = {
 		var l = color[2];
 
 		if (color[1] == 0) {
-			l *= 255;
+			l = Math.round(l*255);
 			return [l, l, l];
 		} else {
 			function hue2rgb(p, q, t) {
