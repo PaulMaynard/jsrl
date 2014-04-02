@@ -11,9 +11,9 @@ function Map(gen) {
 	}
 	if (gen.getRooms) {
 		var rooms = gen.getRooms();
-		for (var i of rooms) {
-			i.getDoors(doors);
-		}
+		rooms.forEach(function(r) {
+			r.getDoors(doors);
+		});
 	}
 	this.tiles = tiles;
 	this.width = tiles.length;
