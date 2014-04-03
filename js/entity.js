@@ -10,7 +10,8 @@ _.assign(Entity.prototype, {
 		if (this.map.canMove(this, x, y)) {
 			this.x += x;
 			this.y += y;
-		} else if (this.map.getTile(this.x + x, this.y + y) === 'door') {
+		}
+		if (this.map.getTile(this.x + x, this.y + y) === 'door') {
 			this.map.setTile(this.x + x, this.y + y, 'opendoor');
 		}
 	},

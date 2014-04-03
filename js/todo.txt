@@ -5,3 +5,4 @@ Stats
 
 BUGS:
 no Combat
+Doors Don't open.
