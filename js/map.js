@@ -1,13 +1,14 @@
 function Map(gen) {
-	var tiles = [];
+	var tiles = [], features = [];
 	for (var x = 0; x < gen._width; x++) {
 		tiles.push([]);
+		features.push([]);
 	}
 	gen.create(function(x, y, wall) {
 		tiles[x][y] = wall ? 'wall' : 'floor';
 	});
 	function doors(x, y) {
-		tiles[x][y] = 'door';
+		features[x][y] = 'door';
 	}
 	if (gen.getRooms) {
 		var rooms = gen.getRooms();
@@ -16,6 +17,7 @@ function Map(gen) {
 		});
 	}
 	this.tiles = tiles;
+	this.features = features;
 	this.width = tiles.length;
 	this.height = tiles[0].length;
 }
@@ -30,6 +32,18 @@ _.assign(Map.prototype, {
 	setTile: function(x, y, val) {
 		if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
 			this.tiles[x][y] = val;
+		}
+	},
+	getFeature: function(x, y) {
+		if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
+			return 'empty';
+		} else {
+			return this.features[x][y];
+		}
+	},
+	setFeature: function(x, y, val) {
+		if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
+			this.features[x][y] = val;
 		}
 	},
 	getRect: function(x, y, w, h) {
@@ -51,7 +65,7 @@ _.assign(Map.prototype, {
 	canMove: function(o, x, y) {
 		x = x || 0;
 		y = y || 0;
-		return !(/^(wall|door|empty)$/.test(this.getTile(o.x + x, o.y + y)));
+		return !(/^(wall|empty)$/.test(this.getTile(o.x + x, o.y + y)));
 	},
 	randomPos: function() {
 		var p = {x: 0, y: 0}, x, y;

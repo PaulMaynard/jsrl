@@ -49,7 +49,7 @@ Game.screens.main = new Screen({
 	render: function() {
 		for (var i = 0; i < this.map.tiles.length; i++) {
 			for (var j = 0; j < this.map.tiles[i].length; j++) {
-				this.display.drawTile(i, j, Game.tiles[this.map.getTile(i, j)] || Game.tiles.empty);
+				this.display.drawTile(i, j, Game.tiles[this.map.getFeature(i, j) || this.map.getTile(i, j) || 'empty']);
 			}
 		}
 		this.display.drawEntity(player);
