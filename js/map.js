@@ -1,6 +1,6 @@
 function Map(gen) {
 	var tiles = [], features = [];
-	for (var x = 0; x < gen._width; x++) {
+	for (var x = 0; x < gen._height; x++) {
 		tiles.push([]);
 		features.push([]);
 	}
@@ -47,25 +47,29 @@ _.assign(Map.prototype, {
 		}
 	},
 	getRect: function(x, y, w, h) {
-		return _.map(_.filter(this.tiles, function(t, i) {
-			return i >= x && i < x + w;
-		}), function(a) {
-			return _.filter(a, function(t, i) {
-				return i >= x && i < x + w;
-			});
-		});
+		return {
+			tiles: _.map(this.tiles.slice(x, x + w + 1), function(c) {
+				return c.slice(y, y + w + 1)
+			}),
+			features: _.map(this.features.slice(x, x + w + 1), function(c) {
+				return c.slice(y, y + w + 1)
+			}),
+		}
 	},
-	setRect: function(x, y, t) {
+	setRect: function(x, y, t, type) {
+		type = type || 'tiles';
 		_.each(t, function(r, i) {
 			_.each(r, function(t, j) {
-				this.tiles[x + i][y + j] = t;
+				this[type][x + i][y + j] = t;
 			}, this);
 		}, this)
 	},
 	canMove: function(o, x, y) {
+		var tiles = /^(wall|empty)$/,
+			features = /^(door)$/
 		x = x || 0;
 		y = y || 0;
-		return !(/^(wall|empty)$/.test(this.getTile(o.x + x, o.y + y)));
+		return !(tiles.test(this.getTile(o.x + x, o.y + y)) || features.test(this.getFeature(o.x + x, o.y + y)));
 	},
 	randomPos: function() {
 		var p = {x: 0, y: 0}, x, y;

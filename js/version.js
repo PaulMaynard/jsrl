@@ -1,7 +1,7 @@
 var VERSION = {
 	major: 0,
 	minor: 1,
-	bugfix: 2,
+	bugfix: 3,
 	state: 'a',
 	name: 'ra',
 	toString: function() {
