@@ -1,7 +1,8 @@
 'use strict';
 document.title = 'jsrl v' + VERSION;
-
-const WIDTH = 100, HEIGHT = 60, SIDEWIDTH = 42, TRAPNUM = 25, POTIONNUM = 40, MONSTERNUM = 25, WEAPONNUMN = 50;
+const SIDEWIDTH = 42, TRAPNUM = 25, POTIONNUM = 40, MONSTERNUM = 25, WEAPONNUMN = 50;
+var dim = new ROT.Display(1,1).computeSize(window.innerWidth, window.innerHeight);
+const WIDTH = dim[0] - SIDEWIDTH, HEIGHT = dim[1]-1;
 var tiles = {
 	wall: {
 		tile: '#',
@@ -17,17 +18,17 @@ var tiles = {
 		tile: '+',
 		color: 'brown',
 		bg: ''
-		open: {
-			tile: '\'',
-			color: tiles.door.color,
-			bg: tiles.door.bg
-		}
 	},
 	trap: {
 		tile: '^',
 		color: 'red',
 		bg: ''
 	}
+};
+tiles.dooropen = {
+	tile: '\'',
+	color: tiles.door.color,
+	bg: tiles.door.bg
 };
 var WALL = '#', WALLALT = '%', WALLCOLOR = 'white', WALLBG = '',
 	FLOOR = '.', FLOORALT = ',', FLOORCOLOR = 'white', FLOORBG = '',
@@ -460,11 +461,6 @@ var data = {
 	names: new ROT.StringGenerator({order: 3})
 };
 
-function Stats(s) {
-	this.str = 10 + (s.str || 0);
-	this.con = 10 + (s.con || 0);
-}
-
 var potiontypes = [];
 data.potions.effects.forEach(function(e) {
 	var a = data.potions.adjectives.random();
@@ -666,7 +662,7 @@ function Monster(name, tile, color, hp, x, y, turn, stats) {
 	this.healMsg = 'The %s is healed for %s hp';
 	this.dieMsg = 'The %s dies';
 	this.effects = [];
-	this.stats = JSON.parse(JSON.stringify(stats)) || {str: 10}
+	this.stats = _.clone(stats || {str: 10});
 }
 Monster.prototype.turn = function() {
 	this._turn()
